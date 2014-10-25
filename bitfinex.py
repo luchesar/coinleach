@@ -11,3 +11,5 @@ def download_l2():
 	coll.insert(r.json())
 
 	return True
+
+download_l2()
