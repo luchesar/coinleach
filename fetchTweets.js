@@ -1,5 +1,7 @@
 var Twit = require('twit')
 var MongoClient = require('mongodb').MongoClient
+var analyze = require('Sentimental').analyze
+var sentiment = require('sentiment')
 
 var T = new Twit({
     consumer_key:         'nacarcJpWnfg0hvX7HdoTMMu9'
@@ -16,6 +18,22 @@ MongoClient.connect('mongodb://127.0.0.1:27017/coinleach', function(err, db) {
     streamTweets(tweets, 'bitcoin')
     streamTweets(tweets, 'cryptocurrency')
 });
+
+function streamTweets(collection, hashTag) {
+    var stream = T.stream('statuses/filter', { track: '#' + hashTag});
+
+    stream.on('tweet', function (tweet) {
+        var sentiment1 = analyze(tweet['text']);
+        var sentiment2 = sentiment(tweet['text']);
+        console.log("text:" + tweet['text'] + " Sentiment: score: " + sentiment1.score + " comparative: " + sentiment1.comparative + " score2:" + sentiment2.score + " comparative2: " + sentiment2.comparative );
+        tweet['sentiment1'] = sentiment1;
+        tweet['sentiment2'] = sentiment2;
+        collection.insert(tweet, function(err, docs) {
+            if(err) throw err;
+            console.log("inserted documents: %j" + docs);
+        });
+    })
+}
 
 function fetchByUser(collection, user) {
     T.get('statuses/user_timeline', { screen_name: user }, function(err, data, response) {
@@ -43,14 +61,3 @@ function fetchByTag(collection, hashTag) {
     })
 }
 
-function streamTweets(collection, hashTag) {
-    var stream = T.stream('statuses/filter', { track: '#' + hashTag});
-
-    stream.on('tweet', function (tweet) {
-        console.log(tweet)
-        collection.insert(tweet, function(err, docs) {
-            if(err) throw err;
-            console.log("inserted documents:" + docs);
-        });
-    })
-}
