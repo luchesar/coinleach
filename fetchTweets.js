@@ -12,22 +12,45 @@ MongoClient.connect('mongodb://127.0.0.1:27017/coinleach', function(err, db) {
     if(err) throw err;
 
     var tweets = db.collection('tweets');
-    fetchBatch(tweets, -1);
-    db.close();
+    //fetchByTag(tweets, 'bitcoin');
+    streamTweets(tweets, 'bitcoin')
+    streamTweets(tweets, 'cryptocurrency')
 });
 
-
-function fetchBatch(collection, cursor) {
-    
-    T.get('statuses/user_timeline', { screen_name: 'Bitcoin' }, function(err, data, response) {
+function fetchByUser(collection, user) {
+    T.get('statuses/user_timeline', { screen_name: user }, function(err, data, response) {
         if(err) throw err;
 
         console.log("data: %j", data);
 
-        //collection.insert(data, function(err, docs) {
-        //    if(err) throw err;
-        //    console.log("inserted documents:" + docs);
-        //    db.close();
-        //});
+        collection.insert(data, function(err, docs) {
+            if(err) throw err;
+            console.log("inserted documents:" + docs);
+        });
+    })
+}
+
+function fetchByTag(collection, hashTag) {
+    T.get('search/tweets', { q: "#" + hashTag, count: 1, cursor: -1}, function(err, data, response) {
+        if(err) throw err;
+
+        console.log("data: %j", data);
+
+        collection.insert(data.statuses, function(err, docs) {
+            if(err) throw err;
+            console.log("inserted documents:" + docs);
+        });
+    })
+}
+
+function streamTweets(collection, hashTag) {
+    var stream = T.stream('statuses/filter', { track: '#' + hashTag});
+
+    stream.on('tweet', function (tweet) {
+        console.log(tweet)
+        collection.insert(tweet, function(err, docs) {
+            if(err) throw err;
+            console.log("inserted documents:" + docs);
+        });
     })
 }
