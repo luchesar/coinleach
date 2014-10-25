@@ -15,7 +15,7 @@ def download_l2():
 
 	print 'successfully downloaded order book at time %s' % r_json['timestamp']
 
-	coll.insert(r.json())
+	coll.insert(r_json)
 
 	print 'finished downloading l2 from bitfinex'
 
